@@ -1,3 +1,4 @@
+
 (defun make-spaces (n)
   (if (> n 0)
     (strcat " " (make-spaces (1- n)))
@@ -5,7 +6,7 @@
   )
 )
 
-(defun c::flayer ( / input-layer layer-name layer-list counter key-list key-char page layers-per-page layer-names total-pages all-layer-names layer-map user-input max-layer-name-length)
+(defun c::flayer ( / input-layer layer-name layer-list counter key-list key-char page layers-per-page layer-names total-pages all-layer-names layer-map user-input max-layer-name-length start-index end-index current-layers i)
   (textscr)  ; Open the text screen
   (setq input-layer (getstring "\nEnter layer name or partial name to filter: "))
   (setq input-layer (strcase input-layer))  ; Convert input to uppercase for case-insensitive comparison
@@ -30,127 +31,89 @@
   (setq total-pages (/ (+ (length all-layer-names) (1- layers-per-page)) layers-per-page))
   (setq page 1)
 
-  (while t
-    (setq layer-names all-layer-names)
-    (setq page 1)
+  (defun show-page ()
+    (setq start-index (* (1- page) layers-per-page))
+    (setq end-index (min (length all-layer-names) (* page layers-per-page)))
+    (setq current-layers '())
+    (setq i start-index)
+    (while (< i end-index)
+      (setq current-layers (append current-layers (list (nth i all-layer-names))))
+      (setq i (1+ i))
+    )
     (setq layer-map '())  ; Reset layer map for each cycle
-    (while layer-names
-      (if (> total-pages 1)
-        (princ (strcat "\nPage " (itoa page) "/" (itoa total-pages) ":\n"))
-        (princ "\n")
+    (if (> total-pages 1)
+      (princ (strcat "\nPage " (itoa page) "/" (itoa total-pages) ":\n"))
+      (princ "\n")
+    )
+    (setq counter 0)
+    (while (< counter (length current-layers))
+      (setq key-char (nth counter key-list))  ; Get the corresponding key character
+      (setq layer (vla-item layer-list (nth counter current-layers)))  ; Get the layer object
+      (setq status "")
+      (setq status (strcat "(" 
+                           (if (= (vla-get-layeron layer) :vlax-true) "On" "Off") ", "  ; Layer on/off status
+                           (if (= (vla-get-lock layer) :vlax-true) "Locked" "Unlocked") ", "  ; Layer lock/unlock status
+                           (if (= (vla-get-freeze layer) :vlax-true) "Frozen" "Unfrozen") ", "  ; Layer freeze/unfreeze status
+                           (if (= (vla-get-plottable layer) :vlax-true) "Plottable" "Not Plottable")  ; Layer plot/not plot status
+                           ")"))
+      (setq layer-map (cons (cons key-char (nth counter current-layers)) layer-map))  ; Map the key to the layer name
+      (princ (strcat "[" key-char "] " (nth counter current-layers) (make-spaces (- (+ max-layer-name-length 2) (strlen (nth counter current-layers)))) status "\n"))  ; Align the status
+      (setq counter (1+ counter))  ; Increment the counter
+    )
+    (if (> total-pages 1)
+      (princ (strcat "\nEnd of Page " (itoa page) "/" (itoa total-pages) "\n"))
+    )
+  )
+
+  (show-page)
+
+  (while t
+    (setq user-input (strcase (getstring "\nType 'n' to see the next page, or type a letter to make that layer current, or 'sf', 'sl', 'so', 'sp' for other actions: ")))  ; Convert user input to uppercase
+    (cond
+      ((equal user-input "N")
+       (setq page (if (= page total-pages) 1 (1+ page)))
+       (show-page)
       )
-      (setq counter 0)
-      (while (and layer-names (< counter layers-per-page))
-        (setq key-char (nth counter key-list))  ; Get the corresponding key character
-        (setq layer (vla-item layer-list (car layer-names)))  ; Get the layer object
-        (setq status "")
-        (setq status (strcat "(" 
-                             (if (= (vla-get-layeron layer) :vlax-true) "On" "Off") ", "  ; Layer on/off status
-                             (if (= (vla-get-lock layer) :vlax-true) "Locked" "Unlocked") ", "  ; Layer lock/unlock status
-                             (if (= (vla-get-freeze layer) :vlax-true) "Frozen" "Unfrozen") ", "  ; Layer freeze/unfreeze status
-                             (if (= (vla-get-plottable layer) :vlax-true) "Plottable" "Not Plottable")  ; Layer plot/not plot status
-                             ")"))
-        (setq layer-map (cons (cons key-char (car layer-names)) layer-map))  ; Map the key to the layer name
-        (princ (strcat "[" key-char "] " (car layer-names) (make-spaces (- (+ max-layer-name-length 2) (strlen (car layer-names)))) status "\n"))  ; Align the status
-        (setq layer-names (cdr layer-names))  ; Remove the first element
-        (setq counter (1+ counter))  ; Increment the counter
+      ((assoc (substr user-input 1 1) layer-map)
+       (setq layer-name (cdr (assoc (substr user-input 1 1) layer-map)))
+       (cond
+         ((= (substr user-input 2 1) "F")  ; Freeze/unfreeze
+          (if (= (vla-get-freeze (vla-item layer-list layer-name)) :vlax-false)
+            (vla-put-freeze (vla-item layer-list layer-name) :vlax-true)
+            (vla-put-freeze (vla-item layer-list layer-name) :vlax-false)
+          )
+          (princ (strcat "\nLayer " layer-name " is now " (if (= (vla-get-freeze (vla-item layer-list layer-name)) :vlax-true) "frozen" "unfrozen") ".\n"))
+         )
+         ((= (substr user-input 2 1) "L")  ; Lock/unlock
+          (if (= (vla-get-lock (vla-item layer-list layer-name)) :vlax-false)
+            (vla-put-lock (vla-item layer-list layer-name) :vlax-true)
+            (vla-put-lock (vla-item layer-list layer-name) :vlax-false)
+          )
+          (princ (strcat "\nLayer " layer-name " is now " (if (= (vla-get-lock (vla-item layer-list layer-name)) :vlax-true) "locked" "unlocked") ".\n"))
+         )
+         ((= (substr user-input 2 1) "O")  ; On/off
+          (if (= (vla-get-layeron (vla-item layer-list layer-name)) :vlax-false)
+            (vla-put-layeron (vla-item layer-list layer-name) :vlax-true)
+            (vla-put-layeron (vla-item layer-list layer-name) :vlax-false)
+          )
+          (princ (strcat "\nLayer " layer-name " is now " (if (= (vla-get-layeron (vla-item layer-list layer-name)) :vlax-true) "on" "off") ".\n"))
+         )
+         ((= (substr user-input 2 1) "P")  ; Plot/not plot
+          (if (= (vla-get-plottable (vla-item layer-list layer-name)) :vlax-false)
+            (vla-put-plottable (vla-item layer-list layer-name) :vlax-true)
+            (vla-put-plottable (vla-item layer-list layer-name) :vlax-false)
+          )
+          (princ (strcat "\nLayer " layer-name " is now " (if (= (vla-get-plottable (vla-item layer-list layer-name)) :vlax-true) "plottable" "not plottable") ".\n"))
+         )
+         (t  ; Make current
+          (command "CLAYER" layer-name)
+          (princ (strcat "\nLayer " layer-name " is now the current layer.\n"))
+         )
+       )
+       (getstring "\nPress Enter to continue...")  ; Wait for the user to press Enter to continue
       )
-      (if layer-names
-        (progn
-          (if (> total-pages 1)
-            (princ (strcat "\nEnd of Page " (itoa page) "/" (itoa total-pages) "\n"))
-          )
-          (setq user-input (strcase (getstring "\nType 'n' to see the next page, or type a letter to make that layer current, or 'sf', 'sl', 'so', 'sp' for other actions: ")))  ; Convert user input to uppercase
-          (if (assoc (substr user-input 1 1) layer-map)
-            (progn
-              (setq layer-name (cdr (assoc (substr user-input 1 1) layer-map)))
-              (cond
-                ((= (substr user-input 2 1) "F")  ; Freeze/unfreeze
-                 (if (= (vla-get-freeze (vla-item layer-list layer-name)) :vlax-false)
-                   (vla-put-freeze (vla-item layer-list layer-name) :vlax-true)
-                   (vla-put-freeze (vla-item layer-list layer-name) :vlax-false)
-                 )
-                 (princ (strcat "\nLayer " layer-name " is now " (if (= (vla-get-freeze (vla-item layer-list layer-name)) :vlax-true) "frozen" "unfrozen") ".\n"))
-                )
-                ((= (substr user-input 2 1) "L")  ; Lock/unlock
-                 (if (= (vla-get-lock (vla-item layer-list layer-name)) :vlax-false)
-                   (vla-put-lock (vla-item layer-list layer-name) :vlax-true)
-                   (vla-put-lock (vla-item layer-list layer-name) :vlax-false)
-                 )
-                 (princ (strcat "\nLayer " layer-name " is now " (if (= (vla-get-lock (vla-item layer-list layer-name)) :vlax-true) "locked" "unlocked") ".\n"))
-                )
-                ((= (substr user-input 2 1) "O")  ; On/off
-                 (if (= (vla-get-layeron (vla-item layer-list layer-name)) :vlax-false)
-                   (vla-put-layeron (vla-item layer-list layer-name) :vlax-true)
-                   (vla-put-layeron (vla-item layer-list layer-name) :vlax-false)
-                 )
-                 (princ (strcat "\nLayer " layer-name " is now " (if (= (vla-get-layeron (vla-item layer-list layer-name)) :vlax-true) "on" "off") ".\n"))
-                )
-                ((= (substr user-input 2 1) "P")  ; Plot/not plot
-                 (if (= (vla-get-plottable (vla-item layer-list layer-name)) :vlax-false)
-                   (vla-put-plottable (vla-item layer-list layer-name) :vlax-true)
-                   (vla-put-plottable (vla-item layer-list layer-name) :vlax-false)
-                 )
-                 (princ (strcat "\nLayer " layer-name " is now " (if (= (vla-get-plottable (vla-item layer-list layer-name)) :vlax-true) "plottable" "not plottable") ".\n"))
-                )
-                (t  ; Make current
-                 (command "CLAYER" layer-name)
-                 (princ (strcat "\nLayer " layer-name " is now the current layer.\n"))
-                )
-              )
-              (getstring "\nPress Enter to continue...")  ; Wait for the user to press Enter to continue
-            )
-            (if (equal user-input "N")
-              (setq page (if (= page total-pages) 1 (1+ page)))
-            )
-          )
-        )
-        (progn
-          (setq user-input (strcase (getstring "\nType 'n' to see the next page, or type a letter to make that layer current, or 'sf', 'sl', 'so', 'sp' for other actions: ")))  ; Convert user input to uppercase
-          (if (assoc (substr user-input 1 1) layer-map)
-            (progn
-              (setq layer-name (cdr (assoc (substr user-input 1 1) layer-map)))
-              (cond
-                ((= (substr user-input 2 1) "F")  ; Freeze/unfreeze
-                 (if (= (vla-get-freeze (vla-item layer-list layer-name)) :vlax-false)
-                   (vla-put-freeze (vla-item layer-list layer-name) :vlax-true)
-                   (vla-put-freeze (vla-item layer-list layer-name) :vlax-false)
-                 )
-                 (princ (strcat "\nLayer " layer-name " is now " (if (= (vla-get-freeze (vla-item layer-list layer-name)) :vlax-true) "frozen" "unfrozen") ".\n"))
-                )
-                ((= (substr user-input 2 1) "L")  ; Lock/unlock
-                 (if (= (vla-get-lock (vla-item layer-list layer-name)) :vlax-false)
-                   (vla-put-lock (vla-item layer-list layer-name) :vlax-true)
-                   (vla-put-lock (vla-item layer-list layer-name) :vlax-false)
-                 )
-                 (princ (strcat "\nLayer " layer-name " is now " (if (= (vla-get-lock (vla-item layer-list layer-name)) :vlax-true) "locked" "unlocked") ".\n"))
-                )
-                ((= (substr user-input 2 1) "O")  ; On/off
-                 (if (= (vla-get-layeron (vla-item layer-list layer-name)) :vlax-false)
-                   (vla-put-layeron (vla-item layer-list layer-name) :vlax-true)
-                   (vla-put-layeron (vla-item layer-list layer-name) :vlax-false)
-                 )
-                 (princ (strcat "\nLayer " layer-name " is now " (if (= (vla-get-layeron (vla-item layer-list layer-name)) :vlax-true) "on" "off") ".\n"))
-                )
-                ((= (substr user-input 2 1) "P")  ; Plot/not plot
-                 (if (= (vla-get-plottable (vla-item layer-list layer-name)) :vlax-false)
-                   (vla-put-plottable (vla-item layer-list layer-name) :vlax-true)
-                   (vla-put-plottable (vla-item layer-list layer-name) :vlax-false)
-                 )
-                 (princ (strcat "\nLayer " layer-name " is now " (if (= (vla-get-plottable (vla-item layer-list layer-name)) :vlax-true) "plottable" "not plottable") ".\n"))
-                )
-                (t  ; Make current
-                 (command "CLAYER" layer-name)
-                 (princ (strcat "\nLayer " layer-name " is now the current layer.\n"))
-                )
-              )
-              (getstring "\nPress Enter to continue...")  ; Wait for the user to press Enter to continue
-            )
-            (if (equal user-input "N")
-              (setq page (if (= page total-pages) 1 (1+ page)))
-            )
-          )
-        )
+      (t
+       (princ "\nInvalid input. Please try again.\n")
       )
     )
   )
