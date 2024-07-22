@@ -5,7 +5,7 @@
   )
 )
 
-(defun c::flayer ( / input-layer layer-name layer-list counter key-list key-char page layers-per-page layer-names total-pages all-layer-names layer-map user-input max-layer-name-length start-index end-index current-layers i)
+(defun c:flayer ( / input-layer layer-name layer-list counter key-list key-char page layers-per-page layer-names total-pages all-layer-names layer-map user-input max-layer-name-length start-index end-index current-layers i current-layer)
   (textscr)  ; Open the text screen
   (setq input-layer (getstring "\nEnter layer name or partial name to filter: "))
   (setq input-layer (strcase input-layer))  ; Convert input to uppercase for case-insensitive comparison
@@ -16,6 +16,7 @@
   (setq all-layer-names '())
   (setq layer-map '())
   (setq max-layer-name-length 0)
+  (setq current-layer (getvar "CLAYER"))
 
   (vlax-for layer layer-list
     (setq layer-name (strcase (vla-get-name layer)))  ; Convert layer name to uppercase for case-insensitive comparison
@@ -67,11 +68,60 @@
   (show-page)
 
   (while t
-    (setq user-input (strcase (getstring "\nType 'n' to see the next page, or type a letter to make that layer current, or 'sf', 'sl', 'so', 'sp' for other actions: ")))  ; Convert user input to uppercase
+    (setq user-input (strcase (getstring "\nType 'n' to see the next page, or type a letter to make that layer current, or 'a' to apply action to all filtered layers, or 'sf', 'sl', 'so', 'sp' for other actions: ")))  ; Convert user input to uppercase
     (cond
       ((equal user-input "N")
        (setq page (if (= page total-pages) 1 (1+ page)))
        (show-page)
+      )
+      ((= (substr user-input 1 1) "A")
+       (cond
+         ((= (substr user-input 2 1) "F")  ; Freeze/unfreeze all except current
+          (foreach layer-name all-layer-names
+            (if (not (equal layer-name current-layer))
+              (progn
+                (setq layer (vla-item layer-list layer-name))
+                (if (= (vla-get-freeze layer) :vlax-false)
+                  (vla-put-freeze layer :vlax-true)
+                  (vla-put-freeze layer :vlax-false)
+                )
+              )
+            )
+          )
+          (princ "\nAll applicable layers are now frozen/unfrozen.\n")
+         )
+         ((= (substr user-input 2 1) "L")  ; Lock/unlock all
+          (foreach layer-name all-layer-names
+            (setq layer (vla-item layer-list layer-name))
+            (if (= (vla-get-lock layer) :vlax-false)
+              (vla-put-lock layer :vlax-true)
+              (vla-put-lock layer :vlax-false)
+            )
+          )
+          (princ "\nAll filtered layers are now locked/unlocked.\n")
+         )
+         ((= (substr user-input 2 1) "O")  ; On/off all
+          (foreach layer-name all-layer-names
+            (setq layer (vla-item layer-list layer-name))
+            (if (= (vla-get-layeron layer) :vlax-false)
+              (vla-put-layeron layer :vlax-true)
+              (vla-put-layeron layer :vlax-false)
+            )
+          )
+          (princ "\nAll filtered layers are now on/off.\n")
+         )
+         ((= (substr user-input 2 1) "P")  ; Plot/not plot all
+          (foreach layer-name all-layer-names
+            (setq layer (vla-item layer-list layer-name))
+            (if (= (vla-get-plottable layer) :vlax-false)
+              (vla-put-plottable layer :vlax-true)
+              (vla-put-plottable layer :vlax-false)
+            )
+          )
+          (princ "\nAll filtered layers are now plottable/not plottable.\n")
+         )
+       )
+       (show-page)  ; Show the same page again after performing the action
       )
       ((assoc (substr user-input 1 1) layer-map)
        (setq layer-name (cdr (assoc (substr user-input 1 1) layer-map)))
