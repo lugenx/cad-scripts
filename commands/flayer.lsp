@@ -1,4 +1,3 @@
-
 (defun make-spaces (n)
   (if (> n 0)
     (strcat " " (make-spaces (1- n)))
@@ -110,7 +109,7 @@
           (princ (strcat "\nLayer " layer-name " is now the current layer.\n"))
          )
        )
-       (getstring "\nPress Enter to continue...")  ; Wait for the user to press Enter to continue
+       (show-page)  ; Show the same page again after performing the action
       )
       (t
        (princ "\nInvalid input. Please try again.\n")
