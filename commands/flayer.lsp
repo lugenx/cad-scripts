@@ -1,6 +1,6 @@
+
 (defun c::flayer ( / input-layer layer-name layer-list counter key-list key-char page layers-per-page layer-names total-pages all-layer-names layer-map user-input)
-  (princ "\nOpening command line...\n")
-  (command "textscr")  ; Open the text screen
+  (textscr)  ; Open the text screen
   (setq input-layer (getstring "\nEnter layer name or partial name to filter: "))
   (setq input-layer (strcase input-layer))  ; Convert input to uppercase for case-insensitive comparison
   (setq layer-list (vla-get-layers (vla-get-activedocument (vlax-get-acad-object))))  ; Get all layers
