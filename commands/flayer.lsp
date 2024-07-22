@@ -1,4 +1,11 @@
-(defun c::flayer ( / input-layer layer-name layer-list counter key-list key-char page layers-per-page layer-names total-pages all-layer-names layer-map user-input)
+(defun make-spaces (n)
+  (if (> n 0)
+    (strcat " " (make-spaces (1- n)))
+    ""
+  )
+)
+
+(defun c::flayer ( / input-layer layer-name layer-list counter key-list key-char page layers-per-page layer-names total-pages all-layer-names layer-map user-input max-layer-name-length)
   (textscr)  ; Open the text screen
   (setq input-layer (getstring "\nEnter layer name or partial name to filter: "))
   (setq input-layer (strcase input-layer))  ; Convert input to uppercase for case-insensitive comparison
@@ -8,11 +15,15 @@
   (setq key-list '("S" "D" "F" "J" "K" "L" "G" "H" "W" "E" "R" "U" "I" "O" "P"))  ; List of keys without "A"
   (setq all-layer-names '())
   (setq layer-map '())
+  (setq max-layer-name-length 0)
 
   (vlax-for layer layer-list
     (setq layer-name (strcase (vla-get-name layer)))  ; Convert layer name to uppercase for case-insensitive comparison
     (if (wcmatch layer-name (strcat "*" input-layer "*"))
-      (setq all-layer-names (append all-layer-names (list layer-name)))
+      (progn
+        (setq all-layer-names (append all-layer-names (list layer-name)))
+        (setq max-layer-name-length (max max-layer-name-length (strlen layer-name)))
+      )
     )
   )
 
@@ -33,12 +44,14 @@
         (setq key-char (nth counter key-list))  ; Get the corresponding key character
         (setq layer (vla-item layer-list (car layer-names)))  ; Get the layer object
         (setq status "")
-        (setq status (strcat status (if (= (vla-get-layeron layer) :vlax-true) "On" "Off") ", "))  ; Layer on/off status
-        (setq status (strcat status (if (= (vla-get-lock layer) :vlax-true) "Locked" "Unlocked") ", "))  ; Layer lock/unlock status
-        (setq status (strcat status (if (= (vla-get-freeze layer) :vlax-true) "Frozen" "Unfrozen") ", "))  ; Layer freeze/unfreeze status
-        (setq status (strcat status (if (= (vla-get-plottable layer) :vlax-true) "Plottable" "Not Plottable")))  ; Layer plot/not plot status
+        (setq status (strcat "(" 
+                             (if (= (vla-get-layeron layer) :vlax-true) "On" "Off") ", "  ; Layer on/off status
+                             (if (= (vla-get-lock layer) :vlax-true) "Locked" "Unlocked") ", "  ; Layer lock/unlock status
+                             (if (= (vla-get-freeze layer) :vlax-true) "Frozen" "Unfrozen") ", "  ; Layer freeze/unfreeze status
+                             (if (= (vla-get-plottable layer) :vlax-true) "Plottable" "Not Plottable")  ; Layer plot/not plot status
+                             ")"))
         (setq layer-map (cons (cons key-char (car layer-names)) layer-map))  ; Map the key to the layer name
-        (princ (strcat "[" key-char "] " (car layer-names) " - " status "\n"))
+        (princ (strcat "[" key-char "] " (car layer-names) (make-spaces (- (+ max-layer-name-length 2) (strlen (car layer-names)))) status "\n"))  ; Align the status
         (setq layer-names (cdr layer-names))  ; Remove the first element
         (setq counter (1+ counter))  ; Increment the counter
       )
