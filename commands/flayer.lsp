@@ -42,8 +42,8 @@
           (if (> total-pages 1)
             (princ (strcat "\nEnd of Page " (itoa page) "/" (itoa total-pages) "\n"))
           )
-          (setq user-input (strcase (getstring "\nPress Enter to see the next page or type a letter to make that layer current, or 'sf', 'sl', 'so', 'sp' for other actions: ")))  ; Convert user input to uppercase
-          (if (and user-input (assoc (substr user-input 1 1) layer-map))
+          (setq user-input (strcase (getstring "\nType 'n' to see the next page, or type a letter to make that layer current, or 'sf', 'sl', 'so', 'sp' for other actions: ")))  ; Convert user input to uppercase
+          (if (assoc (substr user-input 1 1) layer-map)
             (progn
               (setq layer-name (cdr (assoc (substr user-input 1 1) layer-map)))
               (cond
@@ -82,14 +82,14 @@
               )
               (getstring "\nPress Enter to continue...")  ; Wait for the user to press Enter to continue
             )
-            (if (= user-input "")
-              (setq page (1+ page))
+            (if (equal user-input "N")
+              (setq page (if (= page total-pages) 1 (1+ page)))
             )
           )
         )
         (progn
-          (setq user-input (strcase (getstring "\nPress Enter to see the first page again or type a letter to make that layer current, or 'sf', 'sl', 'so', 'sp' for other actions: ")))  ; Convert user input to uppercase
-          (if (and user-input (assoc (substr user-input 1 1) layer-map))
+          (setq user-input (strcase (getstring "\nType 'n' to see the next page, or type a letter to make that layer current, or 'sf', 'sl', 'so', 'sp' for other actions: ")))  ; Convert user input to uppercase
+          (if (assoc (substr user-input 1 1) layer-map)
             (progn
               (setq layer-name (cdr (assoc (substr user-input 1 1) layer-map)))
               (cond
@@ -121,12 +121,15 @@
                  )
                  (princ (strcat "\nLayer " layer-name " is now " (if (= (vla-get-plottable (vla-item layer-list layer-name)) :vlax-true) "plottable" "not plottable") ".\n"))
                 )
-                (t ; Make current
+                (t  ; Make current
                  (command "CLAYER" layer-name)
                  (princ (strcat "\nLayer " layer-name " is now the current layer.\n"))
                 )
               )
-              (getstring "\nPress Enter to continue...") ; Wait for the user to press Enter to continue
+              (getstring "\nPress Enter to continue...")  ; Wait for the user to press Enter to continue
+            )
+            (if (equal user-input "N")
+              (setq page (if (= page total-pages) 1 (1+ page)))
             )
           )
         )
@@ -134,23 +137,3 @@
     )
   )
 )
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
