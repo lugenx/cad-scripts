@@ -5,9 +5,9 @@
   )
 )
 
-(defun c::flayer ( / input-layer layer-name layer-list counter key-list key-char page layers-per-page layer-names total-pages all-layer-names layer-map user-input max-layer-name-length start-index end-index current-layers i current-layer)
+(defun c::flayer ( / input-layer layer-name layer-list counter key-list key-char page layers-per-page layer-names total-pages all-layer-names layer-map user-input max-layer-name-length start-index end-index current-layers i)
   (textscr)  ; Open the text screen
-  (princ "\n")  ; Add an initial line break for better readability
+  (princ "\n\n")  ; Add initial line breaks for better readability
   (setq input-layer (getstring "\nEnter layer name or partial name to filter: "))
   (setq input-layer (strcase input-layer))  ; Convert input to uppercase for case-insensitive comparison
   (setq layer-list (vla-get-layers (vla-get-activedocument (vlax-get-acad-object))))  ; Get all layers
@@ -17,7 +17,6 @@
   (setq all-layer-names '())
   (setq layer-map '())
   (setq max-layer-name-length 0)
-  (setq current-layer (getvar "CLAYER"))
 
   (vlax-for layer layer-list
     (setq layer-name (strcase (vla-get-name layer)))  ; Convert layer name to uppercase for case-insensitive comparison
@@ -33,6 +32,8 @@
   (setq page 1)
 
   (defun show-page ()
+    (setq current-layer (strcase (getvar "CLAYER")))  ; Get the current layer each time the page is shown
+    (princ "\n")  ; Add a line break before displaying the page content
     (setq start-index (* (1- page) layers-per-page))
     (setq end-index (min (length all-layer-names) (* page layers-per-page)))
     (setq current-layers '())
@@ -58,8 +59,11 @@
                            (if (= (vla-get-freeze layer) :vlax-true) "Frozen" "Unfrozen") ", "  ; Layer freeze/unfreeze status
                            (if (= (vla-get-plottable layer) :vlax-true) "Plottable" "Not Plottable")  ; Layer plot/not plot status
                            ")"))
+      (setq layer-name-display (nth counter current-layers))
+      (if (equal layer-name-display current-layer)
+        (setq layer-name-display (strcat layer-name-display "*")))
       (setq layer-map (cons (cons key-char (nth counter current-layers)) layer-map))  ; Map the key to the layer name
-      (princ (strcat "[" key-char "] " (nth counter current-layers) (make-spaces (- (+ max-layer-name-length 2) (strlen (nth counter current-layers)))) status "\n"))  ; Align the status
+      (princ (strcat "[" key-char "] " layer-name-display (make-spaces (- (+ max-layer-name-length 3) (strlen layer-name-display))) status "\n"))  ; Align the status
       (setq counter (1+ counter))  ; Increment the counter
     )
     (if (> total-pages 1)
@@ -83,7 +87,7 @@
        (cond
          ((= (substr user-input 2 1) "F")  ; Freeze all except current
           (foreach layer-name all-layer-names
-            (if (not (equal layer-name current-layer))
+            (if (not (equal (strcase layer-name) current-layer))
               (progn
                 (setq layer (vla-item layer-list layer-name))
                 (vla-put-freeze layer :vlax-true)
@@ -148,7 +152,7 @@
        (setq layer-name (cdr (assoc (substr user-input 1 1) layer-map)))
        (cond
          ((= (substr user-input 2 1) "F")  ; Freeze
-          (if (not (equal layer-name current-layer))
+          (if (not (equal (strcase layer-name) current-layer))
             (vla-put-freeze (vla-item layer-list layer-name) :vlax-true)
             (princ (strcat "\nLayer " layer-name " cannot be frozen because it is the current layer.\n"))
           )
