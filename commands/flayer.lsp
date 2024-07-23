@@ -5,14 +5,14 @@
   )
 )
 
-(defun c::flayer ( / input-layer layer-name layer-list counter key-list key-char page layers-per-page layer-names total-pages all-layer-names layer-map user-input max-layer-name-length start-index end-index current-layers i current-layer)
+(defun c:flayer ( / input-layer layer-name layer-list counter key-list key-char page layers-per-page layer-names total-pages all-layer-names layer-map user-input max-layer-name-length start-index end-index current-layers i current-layer)
   (textscr)  ; Open the text screen
   (setq input-layer (getstring "\nEnter layer name or partial name to filter: "))
   (setq input-layer (strcase input-layer))  ; Convert input to uppercase for case-insensitive comparison
   (setq layer-list (vla-get-layers (vla-get-activedocument (vlax-get-acad-object))))  ; Get all layers
   (setq counter 0)
   (setq layers-per-page 15)
-  (setq key-list '("S" "D" "F" "J" "K" "L" "G" "H" "W" "E" "R" "U" "I" "O" "P"))  ; List of keys without "A"
+  (setq key-list '("A" "S" "D" "F" "J" "K" "L" "G" "H" "W" "E" "R" "U" "I" "O" "P"))  ; List of keys with "A"
   (setq all-layer-names '())
   (setq layer-map '())
   (setq max-layer-name-length 0)
@@ -45,9 +45,10 @@
       (princ (strcat "\nPage " (itoa page) "/" (itoa total-pages) ":\n"))
       (princ "\n")
     )
+    (princ "[A] All\n")  ; Add [A] All at the top
     (setq counter 0)
     (while (< counter (length current-layers))
-      (setq key-char (nth counter key-list))  ; Get the corresponding key character
+      (setq key-char (nth (1+ counter) key-list))  ; Get the corresponding key character, skipping "A"
       (setq layer (vla-item layer-list (nth counter current-layers)))  ; Get the layer object
       (setq status "")
       (setq status (strcat "(" 
