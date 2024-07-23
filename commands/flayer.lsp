@@ -63,12 +63,15 @@
     (if (> total-pages 1)
       (princ (strcat "\nEnd of Page " (itoa page) "/" (itoa total-pages) "\n"))
     )
+    (princ "\nActions:\n")
+    (princ "On/Off (O/X)          Freeze/Unfreeze (F/T)\n")
+    (princ "Lock/Unlock (L/R)     Plottable/Not Plottable (P/Q)\n")
   )
 
   (show-page)
 
   (while t
-    (setq user-input (strcase (getstring "\nType 'n' to see the next page, or type a letter to make that layer current, or 'a' to apply action to all filtered layers, or 'o', 'x', 'l', 'r', 'f', 't', 'p', 'q' for specific actions: ")))  ; Convert user input to uppercase
+    (setq user-input (strcase (getstring "\nEnter action: ")))  ; Convert user input to uppercase
     (cond
       ((equal user-input "N")
        (setq page (if (= page total-pages) 1 (1+ page)))
