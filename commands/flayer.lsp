@@ -6,10 +6,9 @@
 )
 
 (defun c::flayer ( / input-layer layer-name layer-list counter key-list key-char page layers-per-page layer-names total-pages all-layer-names layer-map user-input max-layer-name-length start-index end-index current-layers i)
-  (textscr)  ; Open the text screen
-  (princ "\n\n")  ; Add initial line breaks for better readability
   (setq input-layer (getstring "\nEnter layer name or partial name to filter: "))
   (setq input-layer (strcase input-layer))  ; Convert input to uppercase for case-insensitive comparison
+  (textscr)  ; Open the text screen after entering the filter
   (setq layer-list (vla-get-layers (vla-get-activedocument (vlax-get-acad-object))))  ; Get all layers
   (setq counter 0)
   (setq layers-per-page 15)
@@ -146,6 +145,7 @@
           (princ "\nAll filtered layers are now not plottable.\n")
          )
        )
+       (textscr)  ; Ensure the text screen remains open
        (show-page)  ; Show the same page again after performing the action
       )
       ((assoc (substr user-input 1 1) layer-map)
@@ -186,14 +186,17 @@
           (princ (strcat "\nLayer " layer-name " is now not plottable.\n"))
          )
          (t  ; Make current
-          (command "CLAYER" layer-name)
+          (setq doc (vla-get-activedocument (vlax-get-acad-object)))
+          (vla-put-activelayer doc (vla-item layer-list layer-name))
           (princ (strcat "\nLayer " layer-name " is now the current layer.\n"))
          )
        )
+       (textscr)  ; Ensure the text screen remains open
        (show-page)  ; Show the same page again after performing the action
       )
       (t
        (princ "\nInvalid input. Please try again.\n")
+       (textscr)  ; Ensure the text screen remains open in case of invalid input
       )
     )
   )
