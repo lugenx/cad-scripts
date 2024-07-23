@@ -7,6 +7,7 @@
 
 (defun c::flayer ( / input-layer layer-name layer-list counter key-list key-char page layers-per-page layer-names total-pages all-layer-names layer-map user-input max-layer-name-length start-index end-index current-layers i current-layer)
   (textscr)  ; Open the text screen
+  (princ "\n")  ; Add an initial line break for better readability
   (setq input-layer (getstring "\nEnter layer name or partial name to filter: "))
   (setq input-layer (strcase input-layer))  ; Convert input to uppercase for case-insensitive comparison
   (setq layer-list (vla-get-layers (vla-get-activedocument (vlax-get-acad-object))))  ; Get all layers
