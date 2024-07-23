@@ -5,7 +5,7 @@
   )
 )
 
-(defun c:flayer ( / input-layer layer-name layer-list counter key-list key-char page layers-per-page layer-names total-pages all-layer-names layer-map user-input max-layer-name-length start-index end-index current-layers i current-layer)
+(defun c::flayer ( / input-layer layer-name layer-list counter key-list key-char page layers-per-page layer-names total-pages all-layer-names layer-map user-input max-layer-name-length start-index end-index current-layers i current-layer)
   (textscr)  ; Open the text screen
   (setq input-layer (getstring "\nEnter layer name or partial name to filter: "))
   (setq input-layer (strcase input-layer))  ; Convert input to uppercase for case-insensitive comparison
@@ -42,10 +42,10 @@
     )
     (setq layer-map '())  ; Reset layer map for each cycle
     (if (> total-pages 1)
-      (princ (strcat "\nPage " (itoa page) "/" (itoa total-pages) ":\n"))
+      (princ (strcat "\nPage " (itoa page) "/" (itoa total-pages) ":\n\n"))
       (princ "\n")
     )
-    (princ "[A] All\n")  ; Add [A] All at the top
+    (princ "[A] All\n\n")  ; Add [A] All at the top with line breaks
     (setq counter 0)
     (while (< counter (length current-layers))
       (setq key-char (nth (1+ counter) key-list))  ; Get the corresponding key character, skipping "A"
@@ -72,7 +72,7 @@
   (show-page)
 
   (while t
-    (setq user-input (strcase (getstring "\nEnter action: ")))  ; Convert user input to uppercase
+    (setq user-input (strcase (getstring "\nEnter tag and action (e.g., SO to turn first layer On, AF for All Freeze): ")))  ; Convert user input to uppercase
     (cond
       ((equal user-input "N")
        (setq page (if (= page total-pages) 1 (1+ page)))
