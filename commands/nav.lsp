@@ -1,13 +1,19 @@
 (defun c::nav ()
   (textscr)  ; Open the text screen and keep it open
-  (setq *current-dir* "C:\\")  ; Set initial directory
+  (setq *home-dir* (getenv "USERPROFILE"))  ; Set the home directory to the user's home directory
+  (setq *current-dir* (if (getvar "DWGNAME")
+                          (getvar "DWGPREFIX")
+                          *home-dir*))  ; Set initial directory to the current CAD file location or home directory
   (princ (strcat "\nInitial directory: " *current-dir*))
   (while t
     (setq command (getstring "\nEnter command (cd, .., ls, openfile, opendir, exit): "))
     (cond
       ((equal command "cd")
         (setq arg (getstring "\nEnter directory name: "))
-        (setq full-path (vl-filename-makepath *current-dir* arg))
+        (if (equal arg "~")
+          (setq full-path *home-dir*)
+          (setq full-path (vl-filename-makepath *current-dir* arg))
+        )
         (if (vl-directory-files full-path nil -1)
           (progn
             (setq *current-dir* full-path)
@@ -28,8 +34,10 @@
       )
       ((equal command "ls")
         (if *current-dir*
-          (foreach file (vl-directory-files *current-dir* nil -1)
-            (princ (strcat "\n" file))
+          (progn
+            (foreach item (vl-directory-files *current-dir* nil 0)
+              (princ (strcat "\n" item))
+            )
           )
           (princ "\nNo directory set")
         )
@@ -62,5 +70,8 @@
       (strcat path "\\" filename))
 )
 
-(setq *current-dir* "C:\\")  ; Set initial directory
+(setq *home-dir* (getenv "USERPROFILE"))  ; Set the home directory to the user's home directory
+(setq *current-dir* (if (getvar "DWGNAME")
+                        (getvar "DWGPREFIX")
+                        *home-dir*))  ; Set initial directory to the current CAD file location or home directory
 (princ (strcat "\nInitial directory: " *current-dir*))
