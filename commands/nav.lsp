@@ -1,22 +1,21 @@
-(defun c::nav (/ input command arg full-path)
-  ;; Get the command
-  (setq command (getstring "\nEnter command (cd, .., ls, openfile, opendir): "))
-  
-  ;; Handle the cd command separately to allow space in directory names
-  (if (equal command "cd")
-    (progn
-      ;; Get the directory path
-      (setq arg (getstring "\nEnter directory name: "))
-      (setq full-path (vl-filename-makepath *current-dir* arg))
-      (if (vl-directory-files full-path nil -1)
-        (progn
-          (setq *current-dir* full-path)
-          (princ (strcat "\nCurrent directory: " *current-dir*))
-        )
-        (princ "\nInvalid directory")
-      )
-    )
+(defun c::nav ()
+  (textscr)  ; Open the text screen and keep it open
+  (setq *current-dir* "C:\\")  ; Set initial directory
+  (princ (strcat "\nInitial directory: " *current-dir*))
+  (while t
+    (setq command (getstring "\nEnter command (cd, .., ls, openfile, opendir, exit): "))
     (cond
+      ((equal command "cd")
+        (setq arg (getstring "\nEnter directory name: "))
+        (setq full-path (vl-filename-makepath *current-dir* arg))
+        (if (vl-directory-files full-path nil -1)
+          (progn
+            (setq *current-dir* full-path)
+            (princ (strcat "\nCurrent directory: " *current-dir*))
+          )
+          (princ "\nInvalid directory")
+        )
+      )
       ((equal command "..")
         (setq parent-dir (vl-filename-directory *current-dir*))
         (if (and parent-dir (not (equal parent-dir "")))
@@ -46,10 +45,14 @@
       ((equal command "opendir")
         (startapp "explorer" *current-dir*)
       )
+      ((equal command "exit")
+        (princ "\nExiting navigation mode.")
+        (exit)
+      )
       (t (princ "\nInvalid command"))
     )
+    (princ)
   )
-  (princ)
 )
 
 (defun vl-filename-makepath (path filename)
