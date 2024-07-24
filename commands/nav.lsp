@@ -10,9 +10,15 @@
     (cond
       ((equal command "cd")
         (setq arg (getstring "\nEnter directory name: "))
+        ;; Check if the input is an absolute path
+        (if (vl-string-search ":\\" arg)
+          (setq full-path arg)
+          ;; If not an absolute path, treat it as a relative path
+          (setq full-path (vl-filename-makepath *current-dir* arg))
+        )
+        ;; Handle the ~ as home directory
         (if (equal arg "~")
           (setq full-path *home-dir*)
-          (setq full-path (vl-filename-makepath *current-dir* arg))
         )
         (if (vl-directory-files full-path nil -1)
           (progn
