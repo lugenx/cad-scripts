@@ -13,15 +13,10 @@
     (setq arg (apply 'strcat (mapcar (function (lambda (x) (strcat x " "))) (cdr input-list))))
     (setq arg (vl-string-trim " " arg))
     ;; Debug print statements
-    (princ (strcat "\nInput: " input))
-    (princ (strcat "\nCommand: " command))
-    (princ (strcat "\nArg: " arg))
     (cond
       ((equal command "cd")
         ;; Trim leading and trailing spaces from the argument
         (setq arg (vl-string-trim " " arg))
-        ;; Debug print statement
-        (princ (strcat "\nCommand: " command " Arg: " arg))
         ;; Check if the input is an absolute path
         (if (vl-string-search ":\\" arg)
           (setq full-path arg)
@@ -32,8 +27,7 @@
         (if (equal arg "~")
           (setq full-path *home-dir*)
         )
-        ;; Debug print statement
-        (princ (strcat "\nFull path: " full-path))
+
         (if (vl-directory-files full-path nil -1)
           (progn
             (setq *current-dir* full-path)
