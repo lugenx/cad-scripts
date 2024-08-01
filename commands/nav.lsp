@@ -6,10 +6,12 @@
                           *home-dir*))  ; Set initial directory to the current CAD file location or home directory
   (princ (strcat "\nInitial directory: " *current-dir*))
   (while t
-    (setq command (getstring "\nEnter command (cd, .., ls, openfile, opendir, exit): " T))
+    (setq input (getstring "\nEnter command (cd, .., ls, openfile, opendir, exit): " T))
+    (setq input-list (vl-string->list input " "))
+    (setq command (car input-list))
+    (setq arg (apply 'strcat (cdr input-list)))
     (cond
       ((equal command "cd")
-        (setq arg (getstring "\nEnter directory name: " T))
         ;; Check if the input is an absolute path
         (if (vl-string-search ":\\" arg)
           (setq full-path arg)
@@ -49,7 +51,6 @@
         )
       )
       ((equal command "openfile")
-        (setq arg (getstring "\nEnter file name: " T))
         (setq full-path (vl-filename-makepath *current-dir* arg))
         (if (findfile full-path)
           (command "_.OPEN" full-path)
@@ -74,6 +75,14 @@
           (= (substr path (strlen path)) "/"))
       (strcat path filename)
       (strcat path "\\" filename))
+)
+
+(defun vl-string->list (str delim)
+  (if (not (vl-string-search delim str))
+    (list str)
+    (cons (substr str 1 (vl-string-search delim str))
+          (vl-string->list (substr str (+ (vl-string-search delim str) 2)) delim))
+  )
 )
 
 (setq *home-dir* (getenv "USERPROFILE"))  ; Set the home directory to the user's home directory
