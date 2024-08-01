@@ -9,9 +9,19 @@
     (setq input (getstring "\nEnter command (cd, .., ls, openfile, opendir, exit): " T))
     (setq input-list (vl-string->list input " "))
     (setq command (car input-list))
-    (setq arg (apply 'strcat (cdr input-list)))
+    ;; Properly join the remaining elements as the argument
+    (setq arg (apply 'strcat (mapcar (function (lambda (x) (strcat x " "))) (cdr input-list))))
+    (setq arg (vl-string-trim " " arg))
+    ;; Debug print statements
+    (princ (strcat "\nInput: " input))
+    (princ (strcat "\nCommand: " command))
+    (princ (strcat "\nArg: " arg))
     (cond
       ((equal command "cd")
+        ;; Trim leading and trailing spaces from the argument
+        (setq arg (vl-string-trim " " arg))
+        ;; Debug print statement
+        (princ (strcat "\nCommand: " command " Arg: " arg))
         ;; Check if the input is an absolute path
         (if (vl-string-search ":\\" arg)
           (setq full-path arg)
@@ -22,6 +32,8 @@
         (if (equal arg "~")
           (setq full-path *home-dir*)
         )
+        ;; Debug print statement
+        (princ (strcat "\nFull path: " full-path))
         (if (vl-directory-files full-path nil -1)
           (progn
             (setq *current-dir* full-path)
@@ -83,6 +95,10 @@
     (cons (substr str 1 (vl-string-search delim str))
           (vl-string->list (substr str (+ (vl-string-search delim str) 2)) delim))
   )
+)
+
+(defun vl-string-trim (chars str)
+  (vl-string-right-trim chars (vl-string-left-trim chars str))
 )
 
 (setq *home-dir* (getenv "USERPROFILE"))  ; Set the home directory to the user's home directory
