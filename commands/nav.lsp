@@ -6,10 +6,10 @@
                           *home-dir*))  ; Set initial directory to the current CAD file location or home directory
   (princ (strcat "\nInitial directory: " *current-dir*))
   (while t
-    (setq command (getstring "\nEnter command (cd, .., ls, openfile, opendir, exit): "))
+    (setq command (getstring "\nEnter command (cd, .., ls, openfile, opendir, exit): " T))
     (cond
       ((equal command "cd")
-        (setq arg (getstring "\nEnter directory name: "))
+        (setq arg (getstring "\nEnter directory name: " T))
         ;; Check if the input is an absolute path
         (if (vl-string-search ":\\" arg)
           (setq full-path arg)
@@ -49,7 +49,7 @@
         )
       )
       ((equal command "openfile")
-        (setq arg (getstring "\nEnter file name: "))
+        (setq arg (getstring "\nEnter file name: " T))
         (setq full-path (vl-filename-makepath *current-dir* arg))
         (if (findfile full-path)
           (command "_.OPEN" full-path)
